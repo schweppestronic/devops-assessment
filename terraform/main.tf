@@ -1,21 +1,30 @@
-resource "kubernetes_namespace" "homework" {
-    metadata {
-        name = "production"
+resource "kubernetes_namespace_v1" "homework" {
+  metadata {
+    name = "homework"
+    labels = {
+      "managed-by" = "terraform"
     }
+  }
 }
 
 resource "helm_release" "homework" {
-    name       = "homework"
-    chart      = "../helm/homework"
-    namespace  = kubernetes_namespace.homework.metadata[0].name
+  name      = "homework"
+  chart     = "../helm"
+  namespace = kubernetes_namespace_v1.homework.metadata[0].name
 
-    set {
-        name  = "image.tag"
-        value = 
-    }
+  atomic          = true
+  cleanup_on_fail = true
+  timeout         = 120
 
-    set {
-        name  = "environment"
-        value = prod
-    }
+
+  set = [{
+    name  = "image.repository"
+    value = var.image_repository
+    }, {
+    name  = "image.tag"
+    value = var.image_tag
+    }, {
+    name  = "environment"
+    value = var.environment
+  }]
 }
