@@ -1,13 +1,44 @@
 stages:
+  - test
   - build
   - deploy
 
+variables:
+  IMAGE_NAME: $CI_REGISTRY_IMAGE/homework
+  IMAGE_TAG: $CI_COMMIT_SHORT_SHA # unique per commit; "latest" is rejected by the IaC
+
+test:
+  stage: test
+  image: python:3.12-slim
+  script:
+    - cd app
+    - pip install -r requirements-dev.txt
+    - pytest -v
+
 build:
   stage: build
+  image: docker:27.3
+  services:
+    - docker:27.3-dind
   script:
-    - echo "Building the application..."
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    - docker build --build-arg APP_VERSION="$IMAGE_TAG" -t "$IMAGE_NAME:$IMAGE_TAG" app
+    - docker push "$IMAGE_NAME:$IMAGE_TAG"
 
 deploy:
   stage: deploy
+  image:
+    name: ghcr.io/opentofu/opentofu:1.13.5
+    entrypoint: [""]
+  variables:
+    TF_VAR_kubeconfig_path: $KUBECONFIG # File-type CI/CD variable
+    TF_VAR_image_repository: $IMAGE_NAME
+    TF_VAR_image_tag: $IMAGE_TAG
+    TF_VAR_environment: dev
+  environment: dev
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   script:
-    - echo "Deploying the application..."
+    - cd terraform
+    - tofu init -input=false
+    - tofu apply -input=false -auto-approve
