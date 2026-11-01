@@ -1,19 +1,22 @@
+{{- if .Values.ingress.enabled -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 
 metadata:
-  name: myapp
+  name: {{ .Values.name }}-ingress
+  labels: {{- toYaml .Values.labels | nindent 4 }}
 
 spec:
+  ingressClassName: {{ .Values.ingress.className }}
   rules:
-    - host: myapp.local
+    - host: {{ .Values.ingress.host }}
       http:
-        paths:  
+        paths:
           - path: /
-            pathType: Prefix
-            
+            pathType: {{ .Values.ingress.pathType }}
             backend:
               service:
-                name: homeworks
+                name: {{ .Values.name }}-service
                 port:
-                  number: 80
+                  number: {{ .Values.service.port }}
+{{- end }}
