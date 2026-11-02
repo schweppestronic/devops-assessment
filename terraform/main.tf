@@ -1,6 +1,6 @@
 resource "kubernetes_namespace_v1" "homework" {
   metadata {
-    name = "homework"
+    name = var.namespace
     labels = {
       "managed-by" = "terraform"
     }

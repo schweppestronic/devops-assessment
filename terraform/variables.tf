@@ -22,7 +22,7 @@ variable "image_tag" {
   default     = "1.0.0"
 
   validation {
-    condition     = var.image_tag != "latest" || var.image_tag != ""
+    condition     = var.image_tag != "latest" && var.image_tag != ""
     error_message = "Tag 'latest' is not allowed, use full version tags instead."
   }
 }

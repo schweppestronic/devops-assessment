@@ -15,10 +15,14 @@ spec:
       labels: {{- toYaml .Values.labels | nindent 8 }}
 
     spec:
+      securityContext: {{- toYaml .Values.podSecurityContext | nindent 8 }}
+
       containers:
         - name: {{ .Values.name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+
+          securityContext: {{- toYaml .Values.securityContext | nindent 12 }}
 
           resources: {{- toYaml .Values.resources | nindent 12 }}
 
@@ -30,3 +34,15 @@ spec:
           env:
             - name: ENVIRONMENT
               value: {{ .Values.environment | quote }}
+
+          # gunicorn writes worker heartbeat files to /tmp, which must stay writable
+          # with a read-only root filesystem
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 16Mi
